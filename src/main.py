@@ -1,4 +1,5 @@
 import pygame
+import threading
 from Apple import *
 from pygame.locals import *
 from Player import *
@@ -23,7 +24,6 @@ class App:
     def on_init(self):
         pygame.init()
         self._display_surf = pygame.display.set_mode((self.windowWidth, self.windowHeight), pygame.HWSURFACE)
-
         pygame.display.set_caption('SnakePyGame')
         self._running = True
 
@@ -33,8 +33,8 @@ class App:
     def score(self, input_text, font_size, width, height):
         text = pygame.font.Font('freesansbold.ttf', font_size)
         text_surf = text.render(str(input_text), True, (255, 255, 255))
-        text_rect = text_surf.get_rect().center = (width, height)
-        self._display_surf.blit(text_surf, text_rect)
+        #text_rect = text_surf.get_rect().center = (width, height)
+        self._display_surf.blit(text_surf, (width,height)) #text_rect)
         pygame.display.update()
 
     def on_event(self, event):
@@ -44,15 +44,21 @@ class App:
     def crash(self):
         self.score("YOU LOSE!", 150, self.windowWidth / 50, self.windowHeight / 2.7)
         self.score("Your Score: " + str(self.player.length - 1), 70, (self.windowWidth / 4.2), (self.windowHeight / 1.5))
+
     def on_loop(self):
         self.player.update()
-        apple_step = 50
+        apple_step = 25
+        eat_flag = True
+        flag = True
+
         #snake eat apple
         for i in range(0, self.player.length):
             if self.game.is_collision(self.apple.x, self.apple.y, self.player.x[i], self.player.y[i], apple_step):
-                self.apple.x = randint(2, 9) * apple_step
-                self.apple.y = randint(2, 9) * apple_step
-                self.player.length += 1
+                if i != 0:
+                    self.game.apple_collision(self.apple, self.player, apple_step)
+                elif i == 0:
+                    self.game.apple_collision(self.apple, self.player, apple_step)
+                    self.player.length = self.player.length + 1
 
         #find collision
         for i in range(2, self.player.length):
@@ -63,7 +69,8 @@ class App:
                  self.crash()
                  sleep(3)
                  exit(0)
-        if self.game.out_of_map(self.player.x[0], self.player.y[0], self.windowWidth, self.windowWidth):
+
+        if self.game.out_of_map(self.player.x[0], self.player.y[0], self.windowWidth, self.windowHeight):
             self.crash()
             sleep(3)
             exit(0)
@@ -72,6 +79,7 @@ class App:
         self._display_surf.fill((0, 0, 0))
         self.player.draw(self._display_surf, self._image_surf)
         self.apple.draw(self._display_surf, self._apple_surf)
+        #self.score("Score: " + str(self.player.length - 1), 25, (self.windowWidth / 1.2), (self.windowHeight / 50))
         pygame.display.flip()
 
     def on_cleanup(self):
@@ -82,6 +90,8 @@ class App:
         left_flag = True
         up_flag = True
         down_flag = True
+
+
         if self.on_init() is False:
             self._running = False
 
@@ -121,8 +131,8 @@ class App:
 
             self.on_loop()
             self.on_render()
-            self.score("Score: " + str(self.player.length - 1), 25, (self.windowWidth / 1.2), (self.windowHeight / 50))
-           #pygame.display.update()
+            #self.score("Score: " + str(self.player.length - 1), 25, (self.windowWidth / 1.2), (self.windowHeight / 50))
+            #pygame.display.update()
             sleep(50.0 / 1000.0);
         self.on_cleanup()
 
